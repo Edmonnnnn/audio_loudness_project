@@ -1,0 +1,34 @@
+# Виртуальное окружение
+venv/
+env/
+
+# Базы данных
+*.db
+
+# Временные и выходные файлы
+*.zip
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.wav
+*.flac
+*.mp3
+*.log
+
+# Папки вывода и кэша
+__pycache__/
+output/
+temp_files/
+
+# Служебные файлы IDE
+.vscode/
+*.code-workspace
+
+# Node.js временные
+node_modules/
+
+# Mac/Windows системные
+.DS_Store
+Thumbs.db

@@ -1,0 +1,293 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(120deg, #3a3a5a, #5c5470);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .container {
+    text-align: center;
+    padding: 30px;
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    width: 90%;
+    max-width: 700px;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  input[type="file"],
+  input[type="number"] {
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+  }
+  
+  button {
+    background: #00d1c1;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #00b5aa;
+  }
+  
+  #response {
+    margin: 10px;
+    font-weight: bold;
+  }
+  
+  .plot-box {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(255,255,255,0.08);
+    border-radius: 10px;
+  }
+  
+  .plot-box img {
+    margin-top: 10px;
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px black;
+  }
+  
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0 10px;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    margin-top: 10px;
+  }
+  
+  th, td {
+    padding: 10px;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  
+  th {
+    background-color: #00d1d1;
+    color: white;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: rgba(255,255,255,0.05);
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+
+
+
+
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    transition: background 0.3s, color 0.3s;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: 4em auto;
+    padding: 2em;
+    border-radius: 12px;
+    background-color: #3e3e60;
+    color: #fff;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  
+  h1, h2 {
+    text-align: center;
+  }
+  
+  input, button {
+    width: 100%;
+    padding: 0.6em;
+    margin: 0.5em 0;
+    font-size: 1em;
+    border-radius: 6px;
+    border: none;
+  }
+  
+  button {
+    background: #00e0d0;
+    color: #000;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background: #00c8b0;
+  }
+  
+  #theme-toggle {
+    position: fixed;
+    top: 1em;
+    right: 1em;
+    font-size: 1.5em;
+    cursor: pointer;
+  }
+  
+  table {
+    width: 100%;
+    margin-top: 1em;
+    border-collapse: collapse;
+    font-size: 0.9em;
+  }
+  
+  thead {
+    background-color: #00c8b0;
+    color: black;
+  }
+  
+  th, td {
+    padding: 0.5em;
+    text-align: left;
+    border-bottom: 1px solid #999;
+  }
+  
+  .error {
+    color: red;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  .plot-section {
+    text-align: center;
+    margin-top: 2em;
+  }
+  
+  .plot-section img {
+    width: 100%;
+    max-width: 500px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+  }
+  
+  /* Light theme support */
+  body.light {
+    background-color: #f0f0f0;
+    color: #222;
+  }
+  
+  body.light .container {
+    background-color: #fff;
+    color: #222;
+  }
+  
+  body.light thead {
+    background-color: #007777;
+    color: #fff;
+  }
+  
+
+
+
+
+
+
+  .plot-section img.zoomed {
+    transform: scale(1.5);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  
+
+
+
+
+  #pdf-link {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #00d1c1;
+    padding: 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  #pdf-link:hover {
+    background-color: #00b5aa;
+  }
+  .hidden {
+    display: none !important;
+  }
+
+  
+
+
+/* 📐 Адаптивная таблица */
+#history-table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+    font-size: 14px;
+  }
+  
+  #history-table th,
+  #history-table td {
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+  }
+  
+  #history-table thead {
+    position: sticky;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+  }
+  
+  #history-table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* 📦 Контейнер, чтобы не вылезала */
+  #history-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+
