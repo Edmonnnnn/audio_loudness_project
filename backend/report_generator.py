@@ -4,6 +4,7 @@ from reportlab.lib.units import cm
 import uuid
 import os
 from datetime import datetime
+from mutagen.id3 import ID3
 
 def generate_pdf_report(
     filename: str,
@@ -47,9 +48,31 @@ def generate_pdf_report(
         c.drawString(x, y, "Tags:")
         c.setFont("Helvetica", 12)
         for key, value in tags.items():
-            if value:
+            if value and key != "cover_present":
                 y -= 0.8 * cm
                 c.drawString(x + 0.5 * cm, y, f"{key.capitalize()}: {value}")
+
+    # Вставка обложки
+    if tags and tags.get("cover_present"):
+        try:
+            y -= 1.5 * cm
+            c.setFont("Helvetica-Bold", 13)
+            c.drawString(x, y, "Embedded Cover Image:")
+            y -= 0.5 * cm
+            tags_id3 = ID3(f"temp_files/{filename}")
+            apics = tags_id3.getall('APIC')
+            if apics:
+                # Сохраним cover временно
+                cover_bytes = apics[0].data
+                cover_ext = "jpg" if "jpeg" in apics[0].mime else "png"
+                temp_cover_path = f"temp_files/cover_tmp_{uuid.uuid4().hex}.{cover_ext}"
+                with open(temp_cover_path, "wb") as f:
+                    f.write(cover_bytes)
+                c.drawImage(temp_cover_path, x, y-7*cm, width=7*cm, height=7*cm, preserveAspectRatio=True, mask='auto')
+                os.remove(temp_cover_path)
+                y -= 7.5 * cm
+        except Exception as e:
+            print(f"[WARN] Failed to insert cover image: {e}")
 
     # 📈 Вставка графика
     if plot_path and os.path.exists(plot_path):
