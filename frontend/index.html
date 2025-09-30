@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio Loudness Normalizer</title>
+  <!-- статика через /static -->
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="/static/favicon.ico">
+</head>
+<body>
+  <div class="tabs">
+    <button class="tab-button" data-tab="normalize-tab">Normalize</button>
+    <button class="tab-button" data-tab="history-tab">History</button>
+    <button class="tab-button" data-tab="tags-tab">Tags</button>
+  </div>
+
+  <!-- Normalize Tab -->
+  <div id="normalize-tab" class="tab-content">
+    <h2>🎧 Normalize Audio</h2>
+    <form id="upload-form">
+      <input type="file" id="file-input" required />
+      <input type="number" step="0.1" id="target-lufs" placeholder="-14" value="-14" />
+      <select id="output-format">
+        <option value="wav">WAV</option>
+        <option value="mp3">MP3</option>
+        <option value="flac">FLAC</option>
+      </select>
+      <input type="text" id="bitrate" placeholder="Bitrate (e.g. 192k)" value="192k" />
+      <input type="text" id="preset" placeholder="Preset (optional)" />
+      <button type="submit">🎚️ Normalize</button>
+    </form>
+    <div id="normalize-status"></div>
+  </div>
+
+  <!-- History Tab -->
+  <div id="history-tab" class="tab-content" style="display:none">
+    <h2>📜 History</h2>
+    <button id="refresh-history">🔄 Refresh</button>
+    <table id="history-table">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Format</th>
+          <th>LUFS Before</th>
+          <th>LUFS After</th>
+          <th>Peak</th>
+          <th>Target</th>
+          <th>Time</th>
+          <th>Plot</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Tags Tab -->
+  <div id="tags-tab" class="tab-content" style="display:none">
+    <h2>🎼 Edit MP3 Tags</h2>
+    <form id="tags-form">
+      <input type="file" id="tags-file" accept=".mp3" required />
+      <button type="submit">🔍 Load Tags</button>
+    </form>
+
+    <div id="tags-fields" style="display:none">
+      <label>Title: <input type="text" id="tag-title" /></label>
+      <label>Artist: <input type="text" id="tag-artist" /></label>
+      <label>Album: <input type="text" id="tag-album" /></label>
+      <label>Date: <input type="text" id="tag-date" /></label>
+      <label>Genre: <input type="text" id="tag-genre" /></label>
+      <label>Composer: <input type="text" id="tag-composer" /></label>
+      <label>Disc Number: <input type="text" id="tag-discnumber" /></label>
+      <label>Comments: <input type="text" id="tag-comment" /></label>
+      <label>Album Artist: <input type="text" id="tag-albumartist" /></label>
+      <label>Publisher: <input type="text" id="tag-publisher" /></label>
+      <label>Album URL: <input type="text" id="tag-website" /></label>
+      <label>Track Number: <input type="text" id="tag-tracknumber" /></label>
+      <label>Cover Image (jpg/png): <input type="file" id="tag-cover" accept=".jpg,.jpeg,.png" /></label>
+      <button id="save-tags-btn" type="button">💾 Save Tags</button>
+      <button id="normalize-this-btn" type="button" style="margin-top:8px;">🎚️ Normalize This MP3</button>
+    </div>
+
+    <div id="tags-status"></div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

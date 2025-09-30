@@ -1,0 +1,23 @@
+# Python & build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtualenvs
+venv/
+backend/venv/
+
+# Runtime artefacts
+backend/temp_files/
+backend/output/plots/
+backend/output/reports/
+logs/
+
+# OS/editor junk
+.DS_Store
+.idea/
+.vscode/
