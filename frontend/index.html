@@ -4,9 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Audio Loudness Normalizer</title>
-  <!-- статика через /static -->
-  <link rel="stylesheet" href="/static/style.css" />
-  <link rel="icon" href="/static/favicon.ico">
+
+  <!-- ВАЖНО: все относительные пути идут под /lufs/ -->
+  <base href="/lufs/">
+
+  <!-- файлы лежат в КОРНЕ frontend, без папки static -->
+  <link rel="stylesheet" href="style.css" />
+  <!-- если favicon.ico реально есть в frontend/, оставь строку ниже; иначе убери -->
+  <!-- <link rel="icon" href="favicon.ico"> -->
 </head>
 <body>
   <div class="tabs">
@@ -17,7 +22,7 @@
 
   <!-- Normalize Tab -->
   <div id="normalize-tab" class="tab-content">
-    <h2>🎧 Normalize Audio</h2>
+    <h2> Normalize Audio</h2>
     <form id="upload-form">
       <input type="file" id="file-input" required />
       <input type="number" step="0.1" id="target-lufs" placeholder="-14" value="-14" />
@@ -28,15 +33,15 @@
       </select>
       <input type="text" id="bitrate" placeholder="Bitrate (e.g. 192k)" value="192k" />
       <input type="text" id="preset" placeholder="Preset (optional)" />
-      <button type="submit">🎚️ Normalize</button>
+      <button type="submit"> Normalize</button>
     </form>
     <div id="normalize-status"></div>
   </div>
 
   <!-- History Tab -->
   <div id="history-tab" class="tab-content" style="display:none">
-    <h2>📜 History</h2>
-    <button id="refresh-history">🔄 Refresh</button>
+    <h2> History</h2>
+    <button id="refresh-history"> Refresh</button>
     <table id="history-table">
       <thead>
         <tr>
@@ -56,10 +61,10 @@
 
   <!-- Tags Tab -->
   <div id="tags-tab" class="tab-content" style="display:none">
-    <h2>🎼 Edit MP3 Tags</h2>
+    <h2> Edit MP3 Tags</h2>
     <form id="tags-form">
       <input type="file" id="tags-file" accept=".mp3" required />
-      <button type="submit">🔍 Load Tags</button>
+      <button type="submit"> Load Tags</button>
     </form>
 
     <div id="tags-fields" style="display:none">
@@ -76,13 +81,14 @@
       <label>Album URL: <input type="text" id="tag-website" /></label>
       <label>Track Number: <input type="text" id="tag-tracknumber" /></label>
       <label>Cover Image (jpg/png): <input type="file" id="tag-cover" accept=".jpg,.jpeg,.png" /></label>
-      <button id="save-tags-btn" type="button">💾 Save Tags</button>
-      <button id="normalize-this-btn" type="button" style="margin-top:8px;">🎚️ Normalize This MP3</button>
+      <button id="save-tags-btn" type="button"> Save Tags</button>
+      <button id="normalize-this-btn" type="button" style="margin-top:8px;"> Normalize This MP3</button>
     </div>
 
-    <div id="tags-status"></div>
+  <div id="tags-status"></div>
   </div>
 
-  <script src="/static/script.js"></script>
+  <!-- главный скрипт рядом, без папки static -->
+  <script src="script.js"></script>
 </body>
 </html>
