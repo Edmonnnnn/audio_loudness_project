@@ -8,22 +8,42 @@ window.onload = function () {
       document.getElementById(tabId).style.display = "block";
     });
   });
-  // показать первую вкладку по умолчанию
   const firstTab = document.querySelector(".tab-button");
   if (firstTab) firstTab.click();
 
-  // ---------------------- API base ----------------------
-  // Локально UI обычно открыт на 127.0.0.1:3000 (или localhost:3000) → API = 127.0.0.1:8211
-  // На сервере UI открыт на домене → API тот же origin через Nginx (пустая строка).
-  const API_BASE = (() => {
-    const { hostname } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      const devPort = window.localStorage.getItem("DEV_API_PORT") || "8211"; // сменить на "8212" при желании
-      return `http://127.0.0.1:${devPort}`;
+  // ---------------------- API base & helpers ----------------------
+  // DEV: UI на localhost:3000 → API на 127.0.0.1:8211 (или порт из localStorage.DEV_API_PORT)
+  // PROD: UI на домене → API тот же origin с префиксом /lufs/api
+  const isDevHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const DEV_API_PORT = window.localStorage.getItem("DEV_API_PORT") || "8211";
+  const DEV_API_BASE = `http://127.0.0.1:${DEV_API_PORT}`;
+  const PROD_API_PREFIX = "/lufs/api"; // <— наш nginx проксирует сюда
+
+  function joinUrl(a, b) {
+    if (!a) return b || "";
+    if (!b) return a || "";
+    return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
+  }
+
+  function api(path) {
+    return isDevHost ? joinUrl(DEV_API_BASE, path) : joinUrl(PROD_API_PREFIX, path);
+  }
+  // Файлы/графики, что бэк отдаёт по относительному пути (plot_path и т.п.)
+  function apiFile(pathFromApi) {
+    return isDevHost ? joinUrl(DEV_API_BASE, pathFromApi) : joinUrl(PROD_API_PREFIX, pathFromApi);
+  }
+
+  // Унифицированный показ текста ошибки (включая HTML от nginx)
+  async function safeText(res) {
+    try { return await res.text(); } catch { return res.statusText || "Request failed"; }
+  }
+  function showFriendlyError(res, rawText) {
+    if (res.status === 413) {
+      alert("❌ Файл слишком большой (413). Лимит сервера ~100 MB. Попробуйте файл меньшего размера.");
+      return;
     }
-    return ""; // прод: тот же домен
-  })();
-  const api = (path) => `${API_BASE}${path}`;
+    alert(`❌ Ошибка запроса (${res.status}).\n${rawText?.slice(0, 300) || ""}`);
+  }
 
   // ---------------------- Normalize ----------------------
   const form = document.getElementById("upload-form");
@@ -35,28 +55,37 @@ window.onload = function () {
       if (!file) return alert("Choose file first");
 
       const lufs = document.getElementById("target-lufs").value;
-      const format = document.getElementById("output-format").value;
-      const bitrate = document.getElementById("bitrate").value;
+      const format = document.getElementById("output-format").value;  // 'mp3' | 'wav' | ...
+      const bitrate = document.getElementById("bitrate").value;       // '192k' ...
       const preset = document.getElementById("preset").value;
 
       const fd = new FormData();
       fd.append("file", file);
       if (lufs !== "") fd.append("target_lufs", lufs);
-      fd.append("output_format", format);
-      fd.append("bitrate", bitrate);
-      if (preset) fd.append("preset", preset);
 
+      // Шлём оба варианта ключа для совместимости с разными версиями бэка
+      fd.append("output_format", format);
+      fd.append("fmt", format);
+
+      if (bitrate) fd.append("bitrate", bitrate);
+      if (preset)  fd.append("preset", preset);
+
+      const btn = form.querySelector('button[type="submit"]');
       try {
-        const btn = form.querySelector('button[type="submit"]');
         if (btn) { btn.disabled = true; btn.textContent = "Processing…"; }
 
         const res = await fetch(api("/normalize/"), { method: "POST", body: fd });
-        if (!res.ok) throw new Error(await safeText(res));
+        if (!res.ok) {
+          const t = await safeText(res);
+          console.error("Normalize failed:", res.status, t);
+          return showFriendlyError(res, t);
+        }
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
+        // бэк отдаёт zip — подстрахуемся
         a.download = "result.zip";
         document.body.appendChild(a);
         a.click();
@@ -66,7 +95,6 @@ window.onload = function () {
         console.error(err);
         alert("❌ Normalization failed");
       } finally {
-        const btn = form.querySelector('button[type="submit"]');
         if (btn) { btn.disabled = false; btn.textContent = "🎚️ Normalize"; }
       }
     });
@@ -84,22 +112,26 @@ window.onload = function () {
       fd.append("file", file);
 
       try {
-        const res = await fetch(api("/tags/"), { method: "POST", body: fd }); // если у тебя на бэке /tags/extract — поменяй здесь
-        if (!res.ok) throw new Error(await safeText(res));
+        const res = await fetch(api("/tags/"), { method: "POST", body: fd }); // если будет /tags/extract — поменяй здесь
+        if (!res.ok) {
+          const t = await safeText(res);
+          console.error("Tags load failed:", res.status, t);
+          return showFriendlyError(res, t);
+        }
         const data = await res.json();
 
         document.getElementById("tags-fields").style.display = "block";
-        setValue("tag-title", data.title);
-        setValue("tag-artist", data.artist);
-        setValue("tag-album", data.album);
-        setValue("tag-date", data.date);
-        setValue("tag-genre", data.genre);
-        setValue("tag-composer", data.composer);
-        setValue("tag-discnumber", data.discnumber);
-        setValue("tag-comment", data.comment);
+        setValue("tag-title",       data.title);
+        setValue("tag-artist",      data.artist);
+        setValue("tag-album",       data.album);
+        setValue("tag-date",        data.date);
+        setValue("tag-genre",       data.genre);
+        setValue("tag-composer",    data.composer);
+        setValue("tag-discnumber",  data.discnumber);
+        setValue("tag-comment",     data.comment);
         setValue("tag-albumartist", data.albumartist);
-        setValue("tag-publisher", data.publisher);
-        setValue("tag-website", data.website);
+        setValue("tag-publisher",   data.publisher);
+        setValue("tag-website",     data.website);
         setValue("tag-tracknumber", data.tracknumber);
       } catch (err) {
         console.error(err);
@@ -119,17 +151,17 @@ window.onload = function () {
 
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("title", getValue("tag-title"));
-      fd.append("artist", getValue("tag-artist"));
-      fd.append("album", getValue("tag-album"));
-      fd.append("date", getValue("tag-date"));
-      fd.append("genre", getValue("tag-genre"));
-      fd.append("composer", getValue("tag-composer"));
-      fd.append("discnumber", getValue("tag-discnumber"));
-      fd.append("comment", getValue("tag-comment"));
+      fd.append("title",       getValue("tag-title"));
+      fd.append("artist",      getValue("tag-artist"));
+      fd.append("album",       getValue("tag-album"));
+      fd.append("date",        getValue("tag-date"));
+      fd.append("genre",       getValue("tag-genre"));
+      fd.append("composer",    getValue("tag-composer"));
+      fd.append("discnumber",  getValue("tag-discnumber"));
+      fd.append("comment",     getValue("tag-comment"));
       fd.append("albumartist", getValue("tag-albumartist"));
-      fd.append("publisher", getValue("tag-publisher"));
-      fd.append("website", getValue("tag-website"));
+      fd.append("publisher",   getValue("tag-publisher"));
+      fd.append("website",     getValue("tag-website"));
       fd.append("tracknumber", getValue("tag-tracknumber"));
       if (cover) fd.append("cover", cover);
 
@@ -137,8 +169,14 @@ window.onload = function () {
       status.style.color = "";
 
       try {
-        const res = await fetch(api("/tags/save/"), { method: "POST", body: fd }); // если у тебя /tags/update — поменяй здесь
-        if (!res.ok) throw new Error(await safeText(res));
+        const res = await fetch(api("/tags/save/"), { method: "POST", body: fd }); // если будет /tags/update — поменяй здесь
+        if (!res.ok) {
+          const t = await safeText(res);
+          console.error("Tags save failed:", res.status, t);
+          status.textContent = "❌ Failed to save tags.";
+          status.style.color = "red";
+          return;
+        }
         const data = await res.json();
         status.textContent = data.message || "✅ Tags saved!";
         status.style.color = "lightgreen";
@@ -157,21 +195,29 @@ window.onload = function () {
       const file = document.getElementById("tags-file").files[0];
       if (!file) return alert("Choose MP3 file first");
 
-      const targetLufs = prompt("Target LUFS?", "-14") || "-14";
+      const targetLufs   = prompt("Target LUFS?", "-14") || "-14";
       const outputFormat = prompt("Output format (mp3/wav/flac)?", "mp3") || "mp3";
-      const bitrate = prompt("Bitrate (e.g. 192k)?", "192k") || "192k";
-      const preset = "";
+      const bitrate      = prompt("Bitrate (e.g. 192k)?", "192k") || "192k";
+      const preset       = "";
 
       const fd = new FormData();
       fd.append("filename", file.name);
       fd.append("target_lufs", targetLufs);
+
+      // Совместимость имён полей
       fd.append("output_format", outputFormat);
+      fd.append("fmt", outputFormat);
+
       fd.append("bitrate", bitrate);
       fd.append("preset", preset);
 
       try {
         const res = await fetch(api("/normalize_cached/"), { method: "POST", body: fd });
-        if (!res.ok) throw new Error(await safeText(res));
+        if (!res.ok) {
+          const t = await safeText(res);
+          console.error("Normalize cached failed:", res.status, t);
+          return showFriendlyError(res, t);
+        }
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -195,16 +241,17 @@ window.onload = function () {
     refreshBtn.addEventListener("click", async () => {
       try {
         const res = await fetch(api("/history/"));
-        if (!res.ok) throw new Error(await safeText(res));
+        if (!res.ok) {
+          const t = await safeText(res);
+          console.error("History failed:", res.status, t);
+          return showFriendlyError(res, t);
+        }
         const data = await res.json();
 
         const tbody = document.querySelector("#history-table tbody");
         tbody.innerHTML = "";
         data.forEach((entry) => {
-          const plotHref = entry.plot_path
-            ? `${API_BASE}/${String(entry.plot_path).replace(/^\//, "")}`
-            : null;
-
+          const plotHref = entry.plot_path ? apiFile(String(entry.plot_path)) : null;
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${escapeHtml(entry.filename)}</td>
@@ -234,15 +281,12 @@ window.onload = function () {
     const el = document.getElementById(id);
     return el ? el.value : "";
   }
-  async function safeText(res) {
-    try { return await res.text(); } catch { return res.statusText || "Request failed"; }
-  }
   function safeNum(x) {
     return (x === null || x === undefined || Number.isNaN(Number(x))) ? "-" : x;
   }
   function escapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-    }[c]));
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
   }
 };
