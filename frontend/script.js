@@ -17,14 +17,13 @@ window.onload = function () {
   const isDevHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
   const DEV_API_PORT = window.localStorage.getItem("DEV_API_PORT") || "8211";
   const DEV_API_BASE = `http://127.0.0.1:${DEV_API_PORT}`;
-  const PROD_API_PREFIX = "/lufs/api"; // <— наш nginx проксирует сюда
+  const PROD_API_PREFIX = "/lufs/api"; // <— nginx проксирует сюда
 
   function joinUrl(a, b) {
     if (!a) return b || "";
     if (!b) return a || "";
     return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
   }
-
   function api(path) {
     return isDevHost ? joinUrl(DEV_API_BASE, path) : joinUrl(PROD_API_PREFIX, path);
   }
@@ -33,16 +32,48 @@ window.onload = function () {
     return isDevHost ? joinUrl(DEV_API_BASE, pathFromApi) : joinUrl(PROD_API_PREFIX, pathFromApi);
   }
 
-  // Унифицированный показ текста ошибки (включая HTML от nginx)
+  // ---------------------- LUFS sanitizers ----------------------
+  function normalizeNumberInput(str) {
+    if (str == null) return "";
+    let s = String(str).trim()
+      .replace(/[\u2212\u2013\u2014]/g, "-") // −,–,— → минус
+      .replace(/[\s\u00a0]/g, "")            // пробелы и NBSP
+      .replace(",", ".");                    // , → .
+    // один минус только в начале
+    s = s.replace(/(?!^)-/g, "");
+    // одна точка
+    const parts = s.split(".");
+    if (parts.length > 2) s = parts.shift() + "." + parts.join("");
+    return s;
+  }
+  function parseLUFS(str) {
+    const s = normalizeNumberInput(str);
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  // Приводим поле LUFS к нормальному виду на вводе/вставке
+  const targetInput = document.getElementById("target-lufs");
+  if (targetInput) {
+    ["input", "paste", "change", "blur"].forEach((ev) => {
+      targetInput.addEventListener(ev, () => {
+        const cur = targetInput.value;
+        const clean = normalizeNumberInput(cur);
+        if (cur !== clean) targetInput.value = clean;
+      });
+    });
+  }
+
+  // ---------------------- Общие ошибки ----------------------
   async function safeText(res) {
     try { return await res.text(); } catch { return res.statusText || "Request failed"; }
   }
   function showFriendlyError(res, rawText) {
     if (res.status === 413) {
-      alert("❌ Файл слишком большой (413). Лимит сервера ~100 MB. Попробуйте файл меньшего размера.");
+      alert("❌ Файл слишком большой (413). Лимит сервера около 100 MB. Попробуйте файл меньшего размера.");
       return;
     }
-    alert(`❌ Ошибка запроса (${res.status}).\n${rawText?.slice(0, 300) || ""}`);
+    alert(`❌ Ошибка запроса (${res.status}).\n${(rawText || "").slice(0, 400)}`);
   }
 
   // ---------------------- Normalize ----------------------
@@ -52,40 +83,40 @@ window.onload = function () {
       e.preventDefault();
 
       const file = document.getElementById("file-input").files[0];
-      if (!file) return alert("Choose file first");
+      if (!file) return alert("Выберите аудиофайл");
 
-      const lufs = document.getElementById("target-lufs").value;
-      const format = document.getElementById("output-format").value;  // 'mp3' | 'wav' | ...
-      const bitrate = document.getElementById("bitrate").value;       // '192k' ...
-      const preset = document.getElementById("preset").value;
+      const target = parseLUFS(document.getElementById("target-lufs")?.value);
+      if (!Number.isFinite(target) || target < -40 || target > 0) {
+        return alert("Введите корректный Target LUFS от -40 до 0, например -16");
+      }
+
+      const format  = document.getElementById("output-format")?.value || "mp3";
+      const bitrate = document.getElementById("bitrate")?.value || "";
+      const preset  = document.getElementById("preset")?.value || "";
 
       const fd = new FormData();
       fd.append("file", file);
-      if (lufs !== "") fd.append("target_lufs", lufs);
-
-      // Шлём оба варианта ключа для совместимости с разными версиями бэка
+      fd.append("target_lufs", String(target));
+      // Совместимость имён полей
       fd.append("output_format", format);
       fd.append("fmt", format);
-
       if (bitrate) fd.append("bitrate", bitrate);
       if (preset)  fd.append("preset", preset);
 
       const btn = form.querySelector('button[type="submit"]');
       try {
         if (btn) { btn.disabled = true; btn.textContent = "Processing…"; }
-
         const res = await fetch(api("/normalize/"), { method: "POST", body: fd });
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Normalize failed:", res.status, t);
           return showFriendlyError(res, t);
         }
-
+        // Скачивание ZIP
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        // бэк отдаёт zip — подстрахуемся
         a.download = "result.zip";
         document.body.appendChild(a);
         a.click();
@@ -95,32 +126,32 @@ window.onload = function () {
         console.error(err);
         alert("❌ Normalization failed");
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = "🎚️ Normalize"; }
+        if (btn) { btn.disabled = false; btn.textContent = " Normalize"; }
       }
     });
   }
 
-  // ---------------------- Load Tags ----------------------
+  // ---------------------- Tags: загрузка ----------------------
+  let lastLoadedTagsFile = null; // хранить выбранный MP3 (для Normalize This MP3)
   const tagsForm = document.getElementById("tags-form");
   if (tagsForm) {
     tagsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const file = document.getElementById("tags-file").files[0];
-      if (!file) return alert("Choose MP3 file first");
+      const file = document.getElementById("tags-file")?.files?.[0];
+      if (!file) return alert("Выберите MP3 для чтения тегов");
 
       const fd = new FormData();
       fd.append("file", file);
 
       try {
-        const res = await fetch(api("/tags/"), { method: "POST", body: fd }); // если будет /tags/extract — поменяй здесь
+        const res = await fetch(api("/tags/"), { method: "POST", body: fd }); // сервер может называть /tags/extract — у нас прокси на этот эндпоинт
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Tags load failed:", res.status, t);
           return showFriendlyError(res, t);
         }
         const data = await res.json();
-
-        document.getElementById("tags-fields").style.display = "block";
+        // заполнить поля
         setValue("tag-title",       data.title);
         setValue("tag-artist",      data.artist);
         setValue("tag-album",       data.album);
@@ -133,6 +164,9 @@ window.onload = function () {
         setValue("tag-publisher",   data.publisher);
         setValue("tag-website",     data.website);
         setValue("tag-tracknumber", data.tracknumber);
+
+        document.getElementById("tags-fields").style.display = "";
+        lastLoadedTagsFile = file;
       } catch (err) {
         console.error(err);
         alert("❌ Failed to load tags");
@@ -140,14 +174,14 @@ window.onload = function () {
     });
   }
 
-  // ---------------------- Save Tags ----------------------
-  const saveBtn = document.getElementById("save-tags-btn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", async () => {
-      const file = document.getElementById("tags-file").files[0];
-      const status = document.getElementById("tags-status");
-      const cover = document.getElementById("tag-cover").files[0];
-      if (!file) return alert("Choose MP3 file first");
+  // ---------------------- Tags: сохранение ----------------------
+  const saveTagsBtn = document.getElementById("save-tags-btn");
+  if (saveTagsBtn) {
+    saveTagsBtn.addEventListener("click", async () => {
+      const file = document.getElementById("tags-file")?.files?.[0];
+      if (!file) return alert("Выберите MP3 для сохранения тегов");
+
+      const cover = document.getElementById("tag-cover")?.files?.[0];
 
       const fd = new FormData();
       fd.append("file", file);
@@ -165,51 +199,45 @@ window.onload = function () {
       fd.append("tracknumber", getValue("tag-tracknumber"));
       if (cover) fd.append("cover", cover);
 
-      status.textContent = "⏳ Saving...";
-      status.style.color = "";
-
       try {
-        const res = await fetch(api("/tags/save/"), { method: "POST", body: fd }); // если будет /tags/update — поменяй здесь
+        const res = await fetch(api("/tags/save/"), { method: "POST", body: fd });
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Tags save failed:", res.status, t);
-          status.textContent = "❌ Failed to save tags.";
-          status.style.color = "red";
-          return;
+          return showFriendlyError(res, t);
         }
-        const data = await res.json();
-        status.textContent = data.message || "✅ Tags saved!";
-        status.style.color = "lightgreen";
+        alert("✅ Tags saved");
       } catch (err) {
         console.error(err);
-        status.textContent = "❌ Failed to save tags.";
-        status.style.color = "red";
+        alert("❌ Failed to save tags");
       }
     });
   }
 
-  // ---------------------- Normalize cached ----------------------
+  // ---------------------- Normalize This MP3 (из вкладки Tags) ----------------------
   const normThisBtn = document.getElementById("normalize-this-btn");
   if (normThisBtn) {
     normThisBtn.addEventListener("click", async () => {
-      const file = document.getElementById("tags-file").files[0];
-      if (!file) return alert("Choose MP3 file first");
+      if (!lastLoadedTagsFile) return alert("Сначала загрузите MP3 на вкладке Tags");
 
-      const targetLufs   = prompt("Target LUFS?", "-14") || "-14";
-      const outputFormat = prompt("Output format (mp3/wav/flac)?", "mp3") || "mp3";
-      const bitrate      = prompt("Bitrate (e.g. 192k)?", "192k") || "192k";
-      const preset       = "";
+      const target = parseLUFS(document.getElementById("target-lufs")?.value);
+      if (!Number.isFinite(target) || target < -40 || target > 0) {
+        return alert("Введите корректный Target LUFS от -40 до 0, например -16");
+      }
+      const outputFormat = document.getElementById("output-format")?.value || "mp3";
+      const bitrate = document.getElementById("bitrate")?.value || "";
+      const preset  = document.getElementById("preset")?.value || "";
 
       const fd = new FormData();
-      fd.append("filename", file.name);
-      fd.append("target_lufs", targetLufs);
-
+      // Некоторые реализации /normalize_cached/ берут имя файла/ключ; на всякий — положим и сам файл
+      fd.append("file", lastLoadedTagsFile);
+      fd.append("filename", lastLoadedTagsFile.name);
+      fd.append("target_lufs", String(target));
       // Совместимость имён полей
       fd.append("output_format", outputFormat);
       fd.append("fmt", outputFormat);
-
-      fd.append("bitrate", bitrate);
-      fd.append("preset", preset);
+      if (bitrate) fd.append("bitrate", bitrate);
+      if (preset)  fd.append("preset", preset);
 
       try {
         const res = await fetch(api("/normalize_cached/"), { method: "POST", body: fd });
@@ -275,7 +303,7 @@ window.onload = function () {
   // ---------------------- Helpers ----------------------
   function setValue(id, val) {
     const el = document.getElementById(id);
-    if (el) el.value = val || "";
+    if (el) el.value = val ?? "";
   }
   function getValue(id) {
     const el = document.getElementById(id);

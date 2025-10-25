@@ -1,21 +1,36 @@
+// server.mjs — простой сервер статики под /lufs
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
-const staticDir = path.join(__dirname, 'frontend');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
-// НИКАКИХ ручных редиректов!
-// app.get('/lufs', (req, res) => res.redirect(301, '/lufs/'));
+const app  = express();
+const port = process.env.PORT || 3002;
 
-// ВАЖНО: redirect:false, иначе будет 301
-app.use('/lufs', express.static(staticDir, { index: 'index.html', redirect: false }));
+const publicDir = path.join(__dirname, 'public');
 
-// Можно оставить 127.0.0.1, чтобы ходить через Nginx reverse-proxy
-const host = process.env.HOST || '127.0.0.1';
-const port = Number(process.env.PORT) || 8211;
+app.set('trust proxy', true);
 
-app.listen(port, host, () => {
-  console.log(`[lufs] static server on http://${host}:${port}/lufs/ (cwd=${__dirname})`);
+// Статика под /lufs
+app.use('/lufs', express.static(publicDir, {
+  etag: true,
+  lastModified: true,
+  maxAge: 0,
+}));
+
+// SPA fallback
+app.get('/lufs/*', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// Health фронта
+app.get('/lufs/health', (_req, res) => res.type('text').send('OK\n'));
+
+// 404 на прочее
+app.use((_req, res) => res.status(404).send('Not Found'));
+
+app.listen(port, '127.0.0.1', () => {
+  console.log(`LUFS web listening on http://127.0.0.1:${port}/lufs/`);
 });

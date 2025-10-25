@@ -1,23 +1,39 @@
-# Python & build
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 *.egg-info/
-dist/
-build/
+*.egg
 
-# Virtualenvs
+# venv
+.venv/
 venv/
-backend/venv/
+ENV/
+env/
 
-# Runtime artefacts
+# Local data / cache
 backend/temp_files/
+backend/output/
 backend/output/plots/
-backend/output/reports/
-logs/
+backend/*.db
+*.sqlite
+*.sqlite3
 
-# OS/editor junk
+# OS/editor
 .DS_Store
-.idea/
+Thumbs.db
 .vscode/
+.idea/
+
+# Archives & artifacts
+*.zip
+*.pdf
+*.png
+
+# Logs
+*.log
+
+# Node (если вдруг появится)
+node_modules/
+dist/
