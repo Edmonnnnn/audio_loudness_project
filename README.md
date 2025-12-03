@@ -1,4 +1,410 @@
 🎧 Audio Loudness Normalizer & Tag Editor
+
+Audio Loudness Normalizer & Tag Editor is a modern online tool for analyzing, normalizing, and batch-editing audio files (MP3, WAV, FLAC), including advanced tag (ID3) and cover artwork management.
+Everything runs locally — your files and history never leave your machine.
+
+📦 Key Features
+Audio Normalization (LUFS & Peak)
+
+Supports MP3, WAV, FLAC
+
+Custom Target LUFS
+
+Export to chosen format
+
+Configurable bitrate and presets
+
+Loudness Visualization
+
+Automatic LUFS-over-time plot generation for each track.
+
+PDF Report
+
+A detailed report containing:
+
+Input/output loudness metrics
+
+Peak values
+
+LUFS curve plot
+
+All tags (including extended fields)
+
+Embedded cover image
+
+Processing History
+
+Available in the History tab: sorting, viewing, updating entries.
+
+MP3 Tag Editor
+
+Web UI supporting reading, editing, and writing:
+
+title, artist, album, date, genre, composer, discnumber, comment
+
+albumartist, publisher, website, tracknumber
+
+cover artwork (JPEG/PNG)
+
+Instant Normalization for Edited MP3
+
+After editing tags, you can normalize the same file immediately — no re-upload required.
+
+Light/Dark UI Themes
+
+Modern responsive design, mobile-friendly.
+
+Security
+
+All temporary files and history stay strictly local.
+
+🛠️ Tech Stack
+
+Backend: Python 3.10+, FastAPI, SQLAlchemy, pyloudnorm, librosa, mutagen, reportlab, ffmpeg
+Frontend: HTML5, CSS3, Vanilla JS (no frameworks)
+Database: SQLite (auto-created in temp_files)
+Tag handling: mutagen (EasyID3 + ID3/APIC + custom fields)
+Plots: matplotlib
+
+🚀 Running Locally
+1. Clone the repository
+git clone https://github.com/yourusername/audio_loudness_project.git
+cd audio_loudness_project/backend
+
+2. Install dependencies
+
+Make sure Python 3.10+ and pip are installed.
+
+python -m venv venv
+venv\Scripts\activate     # Windows
+# or
+source venv/bin/activate  # Linux / macOS
+
+pip install -r requirements.txt
+
+
+requirements.txt:
+
+fastapi
+uvicorn
+sqlalchemy
+mutagen
+pyloudnorm
+librosa
+reportlab
+matplotlib
+python-multipart
+psutil
+
+3. Start backend + frontend
+python run_all.py
+
+
+Backend → http://127.0.0.1:8000
+
+Frontend → http://localhost:3000
+
+4. Open the site
+
+Visit: http://localhost:3000
+
+🖥️ How to Use
+Normalize
+
+Open the Normalize tab
+
+Upload MP3/WAV/FLAC
+
+Choose Target LUFS, output format, bitrate, preset
+
+Click Normalize
+
+You will receive a ZIP containing:
+
+Normalized audio
+
+PDF report (metrics, plot, tags, cover)
+
+LUFS plot (PNG, if available)
+
+History
+
+View all past processed files
+
+Sort by date
+
+Download past results
+
+Tags
+
+Upload an MP3
+
+All tags appear for editing
+
+Optional: upload/replace cover (JPEG/PNG)
+
+Click Save Tags (saved locally)
+
+Optionally: Normalize This MP3
+
+🔑 Supported Tags
+
+Standard: Title, Artist, Album, Genre, Date
+Extended: Composer, Disc Number, Comment, Album Artist, Publisher, Website, Track Number
+Cover Image: JPEG/PNG embedded into MP3
+
+🔥 Important Notes
+
+After editing tags, you can normalize without re-uploading.
+
+All operations stay local.
+
+PDF report includes all tags and the embedded cover image.
+
+⚡ Common Issues & Solutions
+ZIP isn’t downloading
+
+Check browser popup/download permissions
+
+Verify required parameters
+
+Check server logs
+
+Tag errors
+
+Only MP3 with ID3v2 is supported
+
+Cover must be JPEG/PNG
+
+“file not found after tag edit”
+
+Ensure the filename matches the originally uploaded file
+
+🧪 QA Checklist (Summary)
+Tag Editing
+
+All standard + extended fields load, edit, save correctly
+
+Cover upload works
+
+Broken MP3 triggers error
+
+Normalization
+
+ZIP contains normalized audio, PDF, and plot
+
+PDF includes updated tags and cover
+
+LUFS/Peak values correct
+
+History
+
+Sorted by date
+
+All entries viewable, downloadable
+
+UI/UX
+
+Smooth tab navigation
+
+Light/dark themes
+
+Proper validation
+
+Security
+
+No data leaves local system
+
+All files stored only in temp_files
+
+🏗️ Project Structure
+/audio_loudness_project/
+  /backend/
+    main.py
+    run_all.py
+    report_generator.py
+    tags_editor.py
+    audio_processor.py
+    loudness_plot.py
+    models.py
+    db.py
+    presets.py
+    requirements.txt
+    temp_files/
+      output/
+      plots/
+  /frontend/
+    index.html
+    style.css
+    script.js
+    assets/
+
+🧪 Detailed QA Instructions (Full Version)
+
+(Your original structure preserved; translated fully.
+If you want this section condensed — just say so.)
+
+General Principles
+
+Testing occurs locally after launching with python run_all.py.
+Use multiple file types: MP3 (with ID3v2), WAV, FLAC.
+Pay attention to complex/extended tags, different cover sizes.
+
+Document:
+
+File name
+
+Steps
+
+Results
+
+Normalization Testing
+Standard flow
+
+Go to Normalize
+
+Upload MP3/WAV/FLAC
+
+Set Target LUFS (e.g., -14)
+
+Choose export format, bitrate, preset
+
+Click Normalize
+
+Validate ZIP:
+
+Output audio is correct format
+
+report.pdf exists
+
+loudness_plot.png exists
+
+Validate PDF:
+
+Filename
+
+Input/output LUFS
+
+Peak
+
+Target
+
+Date
+
+Plot
+
+Tags section
+
+Audio must:
+
+Play without errors
+
+Match original duration
+
+Invalid file
+
+Upload broken MP3 or unsupported format → expect error.
+
+Tag Editor Testing
+Standard flow
+
+Open Tags
+
+Upload MP3 with tags
+
+Verify all fields populate
+
+Modify several fields
+
+Change/add cover
+
+Click Save Tags
+
+Click Normalize This MP3
+
+Verify PDF contains updated tags + cover
+
+Inspect updated MP3 with external tool (Mp3tag, VLC)
+
+Edge cases
+
+Remove required tags → must not save
+
+Upload non-MP3 → error
+
+Upload GIF as cover → error
+
+Instant Normalization After Edit
+
+Edit tags
+
+Save
+
+Click Normalize This MP3
+
+PDF must show updated tags
+
+Removing the file from temp_files → should show “File not found after tag edit!”.
+
+History Testing
+
+History loads on Refresh
+
+Sorted by date
+
+Plot links open images
+
+Metadata matches real results
+
+Multiple consecutive normalizations → history updates correctly
+
+UI/UX & Security
+
+Tabs switch correctly
+
+Light/dark themes work
+
+Inputs validate correctly
+
+Temp files never leave local system
+
+Manual cleanup is allowed
+
+Edge Cases
+
+Long filenames, special characters
+
+Different browsers: Chrome, Firefox, Edge
+
+Reprocessing same file
+
+Multiple open tabs
+
+Manually clearing temp_files
+
+Logs
+
+No unhandled exceptions
+
+Error messages informative
+
+QA Report Must Include
+
+Commit/date version
+
+Tested files (names, duration, tags)
+
+Found bugs (with logs/screenshots)
+
+What’s fully tested and confirmed ✔️
+
+
+---------------------------------------------------------------
+---------------------------------------------------------------
+---------------------------------------------------------------
+
+
+🎧 Audio Loudness Normalizer & Tag Editor
 Audio Loudness Normalizer & Tag Editor — это современный онлайн‑сервис для анализа, нормализации и пакетного редактирования аудиофайлов (MP3, WAV, FLAC), включая расширенную работу с тегами (ID3) и обложкой. Всё работает локально — ваши файлы и история не уходят во внешний интернет.
 
 📦 Основные возможности
