@@ -1,14 +1,22 @@
 // frontend/script.js
 window.onload = function () {
   // ---------------------- Tabs ----------------------
-  document.querySelectorAll(".tab-button").forEach((btn) => {
+  const tabButtons = document.querySelectorAll(".tab-button");
+  tabButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-content").forEach((tab) => (tab.style.display = "none"));
+      tabButtons.forEach((button) => {
+        button.classList.remove("is-active");
+        button.setAttribute("aria-selected", "false");
+      });
       const tabId = btn.getAttribute("data-tab");
-      document.getElementById(tabId).style.display = "block";
+      const tabEl = document.getElementById(tabId);
+      if (tabEl) tabEl.style.display = "block";
+      btn.classList.add("is-active");
+      btn.setAttribute("aria-selected", "true");
     });
   });
-  const firstTab = document.querySelector(".tab-button");
+  const firstTab = tabButtons[0];
   if (firstTab) firstTab.click();
 
   // ---------------------- API base & helpers ----------------------
@@ -53,16 +61,38 @@ window.onload = function () {
   }
 
   // Приводим поле LUFS к нормальному виду на вводе/вставке
-  const targetInput = document.getElementById("target-lufs");
+  const targetInput = document.getElementById("lufs");
+  const presetButtons = Array.from(document.querySelectorAll(".lufs-preset"));
+  function updatePresetState(value) {
+    const normalized = normalizeNumberInput(value);
+    presetButtons.forEach((btn) => {
+      const btnValue = normalizeNumberInput(btn.getAttribute("data-lufs"));
+      const isMatch = normalized !== "" && btnValue === normalized;
+      btn.classList.toggle("is-selected", isMatch);
+      btn.setAttribute("aria-pressed", isMatch ? "true" : "false");
+    });
+  }
   if (targetInput) {
     ["input", "paste", "change", "blur"].forEach((ev) => {
       targetInput.addEventListener(ev, () => {
         const cur = targetInput.value;
         const clean = normalizeNumberInput(cur);
         if (cur !== clean) targetInput.value = clean;
+        updatePresetState(targetInput.value);
       });
     });
   }
+  presetButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const value = btn.getAttribute("data-lufs");
+      if (targetInput && value) {
+        targetInput.value = value;
+        targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+        updatePresetState(value);
+      }
+    });
+  });
+  if (targetInput) updatePresetState(targetInput.value);
 
   // ---------------------- Общие ошибки ----------------------
   async function safeText(res) {
@@ -76,21 +106,50 @@ window.onload = function () {
     alert(`❌ Ошибка запроса (${res.status}).\n${(rawText || "").slice(0, 400)}`);
   }
 
+  function setStatus(id, message, state) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = message || "";
+    if (state) {
+      el.setAttribute("data-state", state);
+    } else {
+      el.removeAttribute("data-state");
+    }
+  }
+  let lastNormalizeUrl = null;
+  function setDownloadLink(url) {
+    const link = document.getElementById("normalize-download");
+    if (!link) return;
+    if (url) {
+      link.href = url;
+      link.style.display = "inline-flex";
+    } else {
+      link.removeAttribute("href");
+      link.style.display = "none";
+    }
+  }
+
   // ---------------------- Normalize ----------------------
   const form = document.getElementById("upload-form");
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const file = document.getElementById("file-input").files[0];
+      const file = document.getElementById("file").files[0];
+      if (!file) {
+        setStatus("normalize-status", "Please choose an audio file first.", "error");
+      }
       if (!file) return alert("Выберите аудиофайл");
 
-      const target = parseLUFS(document.getElementById("target-lufs")?.value);
+      const target = parseLUFS(document.getElementById("lufs")?.value);
+      if (!Number.isFinite(target) || target < -40 || target > 0) {
+        setStatus("normalize-status", "Please enter a target LUFS between -40 and 0.", "error");
+      }
       if (!Number.isFinite(target) || target < -40 || target > 0) {
         return alert("Введите корректный Target LUFS от -40 до 0, например -16");
       }
 
-      const format  = document.getElementById("output-format")?.value || "mp3";
+      const format  = document.getElementById("format")?.value || "mp3";
       const bitrate = document.getElementById("bitrate")?.value || "";
       const preset  = document.getElementById("preset")?.value || "";
 
@@ -104,26 +163,36 @@ window.onload = function () {
       if (preset)  fd.append("preset", preset);
 
       const btn = form.querySelector('button[type="submit"]');
+      if (lastNormalizeUrl) {
+        URL.revokeObjectURL(lastNormalizeUrl);
+        lastNormalizeUrl = null;
+      }
+      setDownloadLink("");
+      setStatus("normalize-status", "Uploading and normalizing. This can take a minute.", "working");
       try {
         if (btn) { btn.disabled = true; btn.textContent = "Processing…"; }
         const res = await fetch(api("/normalize/"), { method: "POST", body: fd });
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Normalize failed:", res.status, t);
+          setStatus("normalize-status", "Request failed. Check the alert for details.", "error");
           return showFriendlyError(res, t);
         }
         // Скачивание ZIP
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
+        lastNormalizeUrl = url;
         const a = document.createElement("a");
         a.href = url;
         a.download = "result.zip";
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
+        setDownloadLink(url);
+        setStatus("normalize-status", "Done. Your download should start now.", "success");
       } catch (err) {
         console.error(err);
+        setStatus("normalize-status", "Normalization failed. Please try again.", "error");
         alert("❌ Normalization failed");
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = " Normalize"; }
@@ -138,16 +207,21 @@ window.onload = function () {
     tagsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const file = document.getElementById("tags-file")?.files?.[0];
+      if (!file) {
+        setStatus("tags-status", "Please choose an MP3 file first.", "error");
+      }
       if (!file) return alert("Выберите MP3 для чтения тегов");
 
       const fd = new FormData();
       fd.append("file", file);
+      setStatus("tags-status", "Loading tags...", "working");
 
       try {
         const res = await fetch(api("/tags/"), { method: "POST", body: fd }); // сервер может называть /tags/extract — у нас прокси на этот эндпоинт
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Tags load failed:", res.status, t);
+          setStatus("tags-status", "Failed to load tags. Check the alert for details.", "error");
           return showFriendlyError(res, t);
         }
         const data = await res.json();
@@ -167,8 +241,10 @@ window.onload = function () {
 
         document.getElementById("tags-fields").style.display = "";
         lastLoadedTagsFile = file;
+        setStatus("tags-status", "Tags loaded. You can edit and save.", "success");
       } catch (err) {
         console.error(err);
+        setStatus("tags-status", "Failed to load tags. Please try again.", "error");
         alert("❌ Failed to load tags");
       }
     });
@@ -179,6 +255,9 @@ window.onload = function () {
   if (saveTagsBtn) {
     saveTagsBtn.addEventListener("click", async () => {
       const file = document.getElementById("tags-file")?.files?.[0];
+      if (!file) {
+        setStatus("tags-status", "Please choose an MP3 file first.", "error");
+      }
       if (!file) return alert("Выберите MP3 для сохранения тегов");
 
       const cover = document.getElementById("tag-cover")?.files?.[0];
@@ -198,17 +277,21 @@ window.onload = function () {
       fd.append("website",     getValue("tag-website"));
       fd.append("tracknumber", getValue("tag-tracknumber"));
       if (cover) fd.append("cover", cover);
+      setStatus("tags-status", "Saving tags...", "working");
 
       try {
         const res = await fetch(api("/tags/save/"), { method: "POST", body: fd });
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Tags save failed:", res.status, t);
+          setStatus("tags-status", "Failed to save tags. Check the alert for details.", "error");
           return showFriendlyError(res, t);
         }
+        setStatus("tags-status", "Tags saved.", "success");
         alert("✅ Tags saved");
       } catch (err) {
         console.error(err);
+        setStatus("tags-status", "Failed to save tags. Please try again.", "error");
         alert("❌ Failed to save tags");
       }
     });
@@ -218,13 +301,19 @@ window.onload = function () {
   const normThisBtn = document.getElementById("normalize-this-btn");
   if (normThisBtn) {
     normThisBtn.addEventListener("click", async () => {
+      if (!lastLoadedTagsFile) {
+        setStatus("tags-status", "Load tags for an MP3 before normalizing.", "error");
+      }
       if (!lastLoadedTagsFile) return alert("Сначала загрузите MP3 на вкладке Tags");
 
-      const target = parseLUFS(document.getElementById("target-lufs")?.value);
+      const target = parseLUFS(document.getElementById("lufs")?.value);
+      if (!Number.isFinite(target) || target < -40 || target > 0) {
+        setStatus("tags-status", "Please enter a target LUFS between -40 and 0.", "error");
+      }
       if (!Number.isFinite(target) || target < -40 || target > 0) {
         return alert("Введите корректный Target LUFS от -40 до 0, например -16");
       }
-      const outputFormat = document.getElementById("output-format")?.value || "mp3";
+      const outputFormat = document.getElementById("format")?.value || "mp3";
       const bitrate = document.getElementById("bitrate")?.value || "";
       const preset  = document.getElementById("preset")?.value || "";
 
@@ -238,12 +327,14 @@ window.onload = function () {
       fd.append("fmt", outputFormat);
       if (bitrate) fd.append("bitrate", bitrate);
       if (preset)  fd.append("preset", preset);
+      setStatus("tags-status", "Normalizing this MP3. This can take a minute.", "working");
 
       try {
         const res = await fetch(api("/normalize_cached/"), { method: "POST", body: fd });
         if (!res.ok) {
           const t = await safeText(res);
           console.error("Normalize cached failed:", res.status, t);
+          setStatus("tags-status", "Request failed. Check the alert for details.", "error");
           return showFriendlyError(res, t);
         }
 
@@ -256,8 +347,10 @@ window.onload = function () {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        setStatus("tags-status", "Done. Your download should start now.", "success");
       } catch (err) {
         console.error(err);
+        setStatus("tags-status", "Normalization failed. Please try again.", "error");
         alert("❌ Normalization failed");
       }
     });
