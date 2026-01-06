@@ -37,3 +37,12 @@ Thumbs.db
 # Node (если вдруг появится)
 node_modules/
 dist/
+
+
+# server/runtime data
+backend/processing_history.db
+logs/
+backend/runtime/out/
+backend/runtime/**
+*.mp3
+*.wav
