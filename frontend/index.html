@@ -5,90 +5,232 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Audio Loudness Normalizer</title>
 
-  <!-- ВАЖНО: все относительные пути идут под /lufs/ -->
-  <base href="/lufs/">
-
-  <!-- файлы лежат в КОРНЕ frontend, без папки static -->
+  <!-- IMPORTANT:
+       Do NOT use <base href="/lufs/"> here.
+       It breaks local dev (localhost) by forcing /lufs/ paths for static assets.
+       Relative links work both locally and on production /lufs/ when served from that folder. -->
   <link rel="stylesheet" href="style.css" />
-  <!-- если favicon.ico реально есть в frontend/, оставь строку ниже; иначе убери -->
-  <!-- <link rel="icon" href="favicon.ico"> -->
 </head>
+
 <body>
-  <div class="tabs">
-    <button class="tab-button" data-tab="normalize-tab">Normalize</button>
-    <button class="tab-button" data-tab="history-tab">History</button>
-    <button class="tab-button" data-tab="tags-tab">Tags</button>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">LUFS tool</p>
+          <h1>Audio Loudness Normalizer</h1>
+          <p class="subtitle">Make your audio the right volume for YouTube, podcasts, and broadcast.</p>
+          <p class="hero-note">Upload a file, choose a target loudness (LUFS), normalize, and download.</p>
+        </div>
+
+        <div class="hero-card">
+          <h2>Common targets</h2>
+          <ul class="hero-list">
+            <li>YouTube: -14 LUFS</li>
+            <li>Podcast: -16 LUFS</li>
+            <li>Broadcast: -23 LUFS</li>
+          </ul>
+          <p class="helper">Use the preset buttons below to fill these instantly.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="tool-area">
+      <!-- Tabs -->
+      <div class="tabs top-tabs" role="tablist" aria-label="LUFS tool sections">
+        <button class="tab-button is-active" data-tab="normalize-tab" type="button" role="tab" aria-selected="true">
+          Normalize
+        </button>
+        <button class="tab-button" data-tab="history-tab" type="button" role="tab" aria-selected="false">
+          History
+        </button>
+        <button class="tab-button" data-tab="tags-tab" type="button" role="tab" aria-selected="false">
+          Tags
+        </button>
+      </div>
+
+      <div class="tab-panels">
+        <!-- ============ NORMALIZE TAB ============ -->
+        <div id="normalize-tab" class="tab-content">
+          <div class="normalize-grid">
+            <div class="card tool-card">
+              <div class="tool-header">
+                <h2>Normalize Audio</h2>
+                <p class="helper">Choose your settings and normalize in one click.</p>
+              </div>
+
+              <!-- Presets -->
+              <div class="preset-row">
+                <span class="label">Preset targets</span>
+                <div class="preset-buttons">
+                  <button class="preset-button lufs-preset is-selected" type="button" data-lufs="-14" aria-pressed="true">
+                    YouTube -14 LUFS
+                  </button>
+                  <button class="preset-button lufs-preset" type="button" data-lufs="-16" aria-pressed="false">
+                    Podcast -16 LUFS
+                  </button>
+                  <button class="preset-button lufs-preset" type="button" data-lufs="-23" aria-pressed="false">
+                    Broadcast -23 LUFS
+                  </button>
+                </div>
+                <span class="help">Click a preset or enter your own target below.</span>
+              </div>
+
+              <!-- IMPORTANT: Keep IDs stable for existing script.js logic -->
+              <form id="upload-form">
+                <div class="form-grid">
+                  <label class="field">
+                    <span class="label">Audio file</span>
+                    <!-- was: file-input -->
+                    <input type="file" id="file" accept=".mp3,.wav" required />
+                    <span class="help">Upload an MP3 or WAV file to normalize.</span>
+                  </label>
+
+                  <label class="field">
+                    <span class="label">Target LUFS</span>
+                    <!-- was: target-lufs -->
+                    <input type="number" step="0.1" id="lufs" placeholder="-14" value="-14" />
+                    <span class="help">Lower is quieter, higher is louder.</span>
+                  </label>
+
+                  <label class="field">
+                    <span class="label">Output format</span>
+                    <!-- was: output-format -->
+                    <select id="format">
+                      <option value="wav">WAV</option>
+                      <option value="mp3">MP3</option>
+                      <option value="flac">FLAC</option>
+                    </select>
+                    <span class="help">WAV for editing, MP3 for sharing, FLAC for lossless.</span>
+                  </label>
+
+                  <label class="field">
+                    <span class="label">MP3 bitrate</span>
+                    <input type="text" id="bitrate" placeholder="Bitrate (e.g. 192k)" value="192k" />
+                    <span class="help">Only used for MP3. Common: 128k / 192k / 320k.</span>
+                  </label>
+
+                  <label class="field span-2">
+                    <span class="label">Preset name or tag (optional)</span>
+                    <input type="text" id="preset" placeholder="Preset (optional)" />
+                    <span class="help">Optional label to find this job later.</span>
+                  </label>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" id="normalize-btn" class="primary">Normalize</button>
+                  <span class="form-note">Creates a ZIP download with your normalized audio.</span>
+                </div>
+              </form>
+
+              <div class="status-group">
+                <!-- Keep stable IDs for JS -->
+                <div id="normalize-status" class="status" role="status" aria-live="polite">Ready to normalize.</div>
+                <a id="normalize-download" class="download-link" href="#" download style="display:none">
+                  Download latest result
+                </a>
+              </div>
+            </div>
+
+            <aside class="card sample-card">
+              <h3>Try a sample in 10 seconds</h3>
+              <p class="helper">Download → Upload → Click Normalize.</p>
+              <a class="secondary action-link" href="sample.mp3" download>Download sample MP3</a>
+              <p class="helper">If the link is 404: add <code>sample.mp3</code> into <code>frontend/</code>.</p>
+            </aside>
+          </div>
+
+          <div class="card how-card">
+            <h3>How it works</h3>
+            <ol class="how-list">
+              <li>Upload an MP3 or WAV file.</li>
+              <li>Pick a target LUFS (or use a preset).</li>
+              <li>Select output format and bitrate if MP3.</li>
+              <li>Add an optional label for History.</li>
+              <li>Click Normalize and download the ZIP.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- ============ HISTORY TAB ============ -->
+        <div id="history-tab" class="tab-content" style="display:none">
+          <div class="card tool-card">
+            <div class="tab-header">
+              <h2>History</h2>
+              <button id="refresh-history" type="button" class="secondary">Refresh</button>
+            </div>
+            <p class="helper">Recent jobs appear here after you click Refresh.</p>
+            <div id="history-table-wrapper">
+              <table id="history-table">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Format</th>
+                    <th>LUFS Before</th>
+                    <th>LUFS After</th>
+                    <th>Peak</th>
+                    <th>Target</th>
+                    <th>Time</th>
+                    <th>Plot</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ TAGS TAB ============ -->
+        <div id="tags-tab" class="tab-content" style="display:none">
+          <div class="card tool-card">
+            <h2>Edit MP3 Tags</h2>
+            <p class="helper">Load an MP3 to view and update its metadata.</p>
+
+            <form id="tags-form" class="inline-form">
+              <label class="field">
+                <span class="label">MP3 file</span>
+                <input type="file" id="tags-file" accept=".mp3" required />
+                <span class="help">Select an MP3 file to edit tags.</span>
+              </label>
+              <button type="submit" class="secondary">Load Tags</button>
+            </form>
+
+            <div id="tags-fields" class="tags-fields" style="display:none">
+              <div class="form-grid">
+                <label class="field"><span class="label">Title</span><input type="text" id="tag-title" /></label>
+                <label class="field"><span class="label">Artist</span><input type="text" id="tag-artist" /></label>
+                <label class="field"><span class="label">Album</span><input type="text" id="tag-album" /></label>
+                <label class="field"><span class="label">Date</span><input type="text" id="tag-date" /></label>
+                <label class="field"><span class="label">Genre</span><input type="text" id="tag-genre" /></label>
+                <label class="field"><span class="label">Composer</span><input type="text" id="tag-composer" /></label>
+                <label class="field"><span class="label">Disc Number</span><input type="text" id="tag-discnumber" /></label>
+                <label class="field"><span class="label">Comments</span><input type="text" id="tag-comment" /></label>
+                <label class="field"><span class="label">Album Artist</span><input type="text" id="tag-albumartist" /></label>
+                <label class="field"><span class="label">Publisher</span><input type="text" id="tag-publisher" /></label>
+                <label class="field"><span class="label">Album URL</span><input type="text" id="tag-website" /></label>
+                <label class="field"><span class="label">Track Number</span><input type="text" id="tag-tracknumber" /></label>
+
+                <label class="field span-2">
+                  <span class="label">Cover Image (jpg/png)</span>
+                  <input type="file" id="tag-cover" accept=".jpg,.jpeg,.png" />
+                  <span class="help">Optional artwork for the MP3 file.</span>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button id="save-tags-btn" type="button" class="primary">Save Tags</button>
+                <button id="normalize-this-btn" type="button" class="secondary">Normalize This MP3</button>
+              </div>
+            </div>
+
+            <div id="tags-status" class="status" role="status" aria-live="polite">Load an MP3 to edit tags.</div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- Normalize Tab -->
-  <div id="normalize-tab" class="tab-content">
-    <h2> Normalize Audio</h2>
-    <form id="upload-form">
-      <input type="file" id="file-input" required />
-      <input type="number" step="0.1" id="target-lufs" placeholder="-14" value="-14" />
-      <select id="output-format">
-        <option value="wav">WAV</option>
-        <option value="mp3">MP3</option>
-        <option value="flac">FLAC</option>
-      </select>
-      <input type="text" id="bitrate" placeholder="Bitrate (e.g. 192k)" value="192k" />
-      <input type="text" id="preset" placeholder="Preset (optional)" />
-      <button type="submit"> Normalize</button>
-    </form>
-    <div id="normalize-status"></div>
-  </div>
-
-  <!-- History Tab -->
-  <div id="history-tab" class="tab-content" style="display:none">
-    <h2> History</h2>
-    <button id="refresh-history"> Refresh</button>
-    <table id="history-table">
-      <thead>
-        <tr>
-          <th>File</th>
-          <th>Format</th>
-          <th>LUFS Before</th>
-          <th>LUFS After</th>
-          <th>Peak</th>
-          <th>Target</th>
-          <th>Time</th>
-          <th>Plot</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Tags Tab -->
-  <div id="tags-tab" class="tab-content" style="display:none">
-    <h2> Edit MP3 Tags</h2>
-    <form id="tags-form">
-      <input type="file" id="tags-file" accept=".mp3" required />
-      <button type="submit"> Load Tags</button>
-    </form>
-
-    <div id="tags-fields" style="display:none">
-      <label>Title: <input type="text" id="tag-title" /></label>
-      <label>Artist: <input type="text" id="tag-artist" /></label>
-      <label>Album: <input type="text" id="tag-album" /></label>
-      <label>Date: <input type="text" id="tag-date" /></label>
-      <label>Genre: <input type="text" id="tag-genre" /></label>
-      <label>Composer: <input type="text" id="tag-composer" /></label>
-      <label>Disc Number: <input type="text" id="tag-discnumber" /></label>
-      <label>Comments: <input type="text" id="tag-comment" /></label>
-      <label>Album Artist: <input type="text" id="tag-albumartist" /></label>
-      <label>Publisher: <input type="text" id="tag-publisher" /></label>
-      <label>Album URL: <input type="text" id="tag-website" /></label>
-      <label>Track Number: <input type="text" id="tag-tracknumber" /></label>
-      <label>Cover Image (jpg/png): <input type="file" id="tag-cover" accept=".jpg,.jpeg,.png" /></label>
-      <button id="save-tags-btn" type="button"> Save Tags</button>
-      <button id="normalize-this-btn" type="button" style="margin-top:8px;"> Normalize This MP3</button>
-    </div>
-
-  <div id="tags-status"></div>
-  </div>
-
-  <!-- главный скрипт рядом, без папки static -->
-  <script src="script.js"></script>
+  <!-- cache-busting to see changes after deploy -->
+  <script src="script.js?v=20260106" defer></script>
 </body>
 </html>
