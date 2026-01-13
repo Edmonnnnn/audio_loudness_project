@@ -12,6 +12,11 @@
           "LUFS Normalizer is an online tool that sets your audio to a target loudness (LUFS) so videos, podcasts, and recordings sound consistent across platforms.",
         note:
           "Upload an MP3/WAV, choose a target (YouTube −14 LUFS, Podcast −16 LUFS, Broadcast −23 LUFS) or enter your own, set format/bitrate if needed, then click “Normalize”. Download the result and optionally keep it in History and tag it.",
+        targets: {
+          youtube: "YouTube: -14 LUFS",
+          podcast: "Podcast: -16 LUFS",
+          broadcast: "Broadcast: -23 LUFS"
+        },
         commonTargetsTitle: "Common targets",
         helper: "Use the preset buttons below to fill these instantly."
       },
@@ -74,7 +79,8 @@
         thTime: "Time",
         thPlot: "Plot",
         empty: "No history yet.",
-        loadError: "Failed to load history."
+        loadError: "Failed to load history.",
+        view: "View"
       },
 
       tags: {
@@ -99,7 +105,14 @@
         cover: "Cover Image (jpg/png)",
         coverHelp: "Optional artwork for the MP3 file.",
         btnSave: "Save Tags",
-        btnNormalizeThis: "Normalize This MP3"
+        btnNormalizeThis: "Normalize This MP3",
+        loading: "Loading tags...",
+        loaded: "Tags loaded. You can edit and save.",
+        saving: "Saving tags...",
+        saved: "Tags saved.",
+        loadError: "Failed to load tags.",
+        saveError: "Failed to save tags.",
+        normalizeWorking: "Normalizing this MP3. This can take a minute."
       },
 
       runtime: {
@@ -108,6 +121,24 @@
         done: "Done.",
         error: "Error.",
         errorWithDetails: "Error: {msg}"
+      },
+
+      validate: {
+        chooseAudioFirst: "Please choose an audio file first.",
+        chooseMp3First: "Please choose an MP3 file first.",
+        invalidTarget: "Please enter a target LUFS between -40 and 0 (e.g. -16).",
+        loadTagsBeforeNormalize: "Load tags for an MP3 before normalizing."
+      },
+
+      alerts: {
+        fileTooLarge:
+          "File is too large (413). Server limit is around 100 MB. Try a smaller file.",
+        requestFailed: "Request failed ({status}).",
+        normalizationFailed: "Normalization failed.",
+        tagsLoadFailed: "Failed to load tags.",
+        tagsSaveFailed: "Failed to save tags.",
+        tagsSaved: "Tags saved.",
+        historyLoadFailed: "Failed to load history."
       }
     },
 
@@ -121,6 +152,11 @@
           "LUFS-нормализатор — онлайн-инструмент, который приводит громкость вашего аудио к заданному уровню (LUFS), чтобы ролики, подкасты и записи звучали ровно и предсказуемо на разных платформах.",
         note:
           "Загрузите MP3/WAV, выберите цель (YouTube −14 LUFS, Подкаст −16 LUFS, Трансляция −23 LUFS) или задайте своё значение, при необходимости укажите формат/битрейт и нажмите «Нормализировать». После обработки скачайте готовый файл и при желании сохраните результат в Историю и пометьте тегами.",
+        targets: {
+          youtube: "YouTube: -14 LUFS",
+          podcast: "Подкаст: -16 LUFS",
+          broadcast: "Трансляция: -23 LUFS"
+        },
         commonTargetsTitle: "Общие цели",
         helper: "Используйте кнопки пресетов ниже, чтобы заполнить значения мгновенно."
       },
@@ -183,7 +219,8 @@
         thTime: "Время",
         thPlot: "График",
         empty: "История пока пустая.",
-        loadError: "Не удалось загрузить историю."
+        loadError: "Не удалось загрузить историю.",
+        view: "Открыть"
       },
 
       tags: {
@@ -208,7 +245,14 @@
         cover: "Обложка (jpg/png)",
         coverHelp: "Опциональная обложка для MP3.",
         btnSave: "Сохранить теги",
-        btnNormalizeThis: "Нормализировать этот MP3"
+        btnNormalizeThis: "Нормализировать этот MP3",
+        loading: "Загрузка тегов…",
+        loaded: "Теги загружены. Можно редактировать и сохранить.",
+        saving: "Сохранение тегов…",
+        saved: "Теги сохранены.",
+        loadError: "Не удалось загрузить теги.",
+        saveError: "Не удалось сохранить теги.",
+        normalizeWorking: "Нормализация этого MP3. Это может занять до минуты."
       },
 
       runtime: {
@@ -217,6 +261,24 @@
         done: "Готово.",
         error: "Ошибка.",
         errorWithDetails: "Ошибка: {msg}"
+      },
+
+      validate: {
+        chooseAudioFirst: "Сначала выберите аудиофайл.",
+        chooseMp3First: "Сначала выберите MP3 файл.",
+        invalidTarget: "Введите корректный Target LUFS от -40 до 0 (например, -16).",
+        loadTagsBeforeNormalize: "Сначала загрузите теги MP3, затем нормализуйте."
+      },
+
+      alerts: {
+        fileTooLarge:
+          "Файл слишком большой (413). Лимит сервера около 100 MB. Попробуйте файл меньшего размера.",
+        requestFailed: "Ошибка запроса ({status}).",
+        normalizationFailed: "Нормализация не удалась.",
+        tagsLoadFailed: "Не удалось загрузить теги.",
+        tagsSaveFailed: "Не удалось сохранить теги.",
+        tagsSaved: "Теги сохранены.",
+        historyLoadFailed: "Не удалось загрузить историю."
       }
     }
   };

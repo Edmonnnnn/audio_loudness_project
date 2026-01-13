@@ -579,3 +579,80 @@ button:disabled {
     scroll-behavior: auto;
   }
 }
+
+
+/* ===== i18n Language Switch + Hero layout fixes ===== */
+
+.hero {
+  position: relative; /* чтобы lang-switch мог быть absolute внутри hero */
+}
+
+.hero-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 28px;
+  align-items: start;
+  position: relative;
+}
+
+/* Плавающий переключатель языка (не влияет на layout) */
+.lang-switch {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  z-index: 5;
+}
+
+.lang-btn {
+  border: 0;
+  background: transparent;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.lang-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.lang-btn.is-active {
+  background: rgba(0, 0, 0, 0.10);
+}
+
+/* Чуть лучше читабельность в hero */
+.hero-copy {
+  max-width: 680px;
+}
+
+.hero-card {
+  max-width: 420px;
+  width: 100%;
+  justify-self: end;
+}
+
+/* Responsive: всё в одну колонку */
+@media (max-width: 900px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+  }
+  .hero-card {
+    justify-self: start;
+    max-width: 100%;
+  }
+  .lang-switch {
+    top: 12px;
+    right: 12px;
+  }
+}
