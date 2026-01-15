@@ -422,11 +422,13 @@ window.onload = function () {
     tagsForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const file = document.getElementById("tags-file")?.files?.[0];
+      const file = document.getElementById("file").files[0];
       if (!file) {
-        setStatus("tags-status", tr("validate.chooseMp3First"), "error");
-        return alert(tr("validate.chooseMp3First"));
+        const msg = t("validate.chooseAudioFirst");
+        setStatus("normalize-status", msg, "error");
+        return alert(msg);
       }
+
 
       const fd = new FormData();
       fd.append("file", file);
@@ -474,9 +476,12 @@ window.onload = function () {
     saveTagsBtn.addEventListener("click", async () => {
       const file = document.getElementById("tags-file")?.files?.[0];
       if (!file) {
-        setStatus("tags-status", tr("validate.chooseMp3First"), "error");
-        return alert(tr("validate.chooseMp3First"));
+        const msg = t("validate.chooseMp3First");
+        setStatus("tags-status", msg, "error");
+        return alert(msg);
       }
+
+
 
       const cover = document.getElementById("tag-cover")?.files?.[0];
 

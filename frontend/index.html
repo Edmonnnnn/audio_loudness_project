@@ -101,12 +101,12 @@
               </div>
 
               <!-- IMPORTANT: Keep IDs stable for existing script.js logic -->
-              <form id="upload-form">
+              <form id="upload-form" novalidate>
                 <div class="form-grid">
                   <label class="field">
                     <span class="label" data-i18n="normalize.audioFile">Audio file</span>
 
-                    <input type="file" id="file" accept=".mp3,.wav" required class="file-input" />
+                    <input type="file" id="file" accept=".mp3,.wav" class="file-input" />
 
                     <div class="file-picker">
                       <button type="button" id="file-btn" class="file-button" data-i18n="normalize.chooseFile">
@@ -218,11 +218,11 @@
             <h2 data-i18n="tags.title">Edit MP3 Tags</h2>
             <p class="helper" data-i18n="tags.subtitle">Load an MP3 to view and update its metadata.</p>
 
-            <form id="tags-form" class="inline-form">
+            <form id="tags-form" class="inline-form" novalidate>
               <label class="field">
                 <span class="label" data-i18n="tags.mp3File">MP3 file</span>
 
-                <input type="file" id="tags-file" accept=".mp3" required class="file-input" />
+                <input type="file" id="tags-file" accept=".mp3" class="file-input" />
 
                 <div class="file-picker">
                   <button type="button" id="tags-file-btn" class="file-button" data-i18n="tags.chooseFile">
