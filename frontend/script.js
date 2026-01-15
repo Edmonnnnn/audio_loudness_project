@@ -1,5 +1,10 @@
 // frontend/script.js
 window.onload = function () {
+
+  const t = (key, params) => (window.i18n && typeof window.i18n.t === "function")
+  ? window.i18n.t(key, params)
+  : key;
+
   // ---------------------- i18n helpers ----------------------
   const I18N = window.i18n || null;
 
@@ -162,6 +167,30 @@ window.onload = function () {
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
   }
+
+    function wireFilePicker(inputId, btnId, nameId, emptyKey) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    const name = document.getElementById(nameId);
+    if (!input || !btn || !name) return;
+
+    const update = () => {
+      const f = input.files && input.files[0];
+      name.textContent = f ? f.name : t(emptyKey);
+    };
+
+    btn.addEventListener("click", () => input.click());
+    input.addEventListener("change", update);
+
+    // чтобы при переключении RU/EN, если файл выбран — показывалось имя, а не "Файл не выбран"
+    window.addEventListener("lufs:lang-changed", update);
+
+    update();
+  }
+
+  wireFilePicker("file", "file-btn", "file-name", "normalize.noFile");
+  wireFilePicker("tags-file", "tags-file-btn", "tags-file-name", "tags.noFile");
+
 
   // Приводим поле LUFS к нормальному виду на вводе/вставке
   const targetInput = document.getElementById("lufs");

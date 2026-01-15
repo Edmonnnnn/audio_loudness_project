@@ -34,6 +34,8 @@
         presetHelp: "Click a preset or enter your own target below.",
         audioFile: "Audio file",
         audioHelp: "Upload an MP3 or WAV file to normalize.",
+        chooseFile: "Choose file",
+        noFile: "No file chosen",
         targetLufs: "Target LUFS",
         targetHelp: "Lower is quieter, higher is louder.",
         outputFormat: "Output format",
@@ -88,6 +90,8 @@
         subtitle: "Load an MP3 to view and update its metadata.",
         mp3File: "MP3 file",
         mp3Help: "Select an MP3 file to edit tags.",
+        chooseFile: "Choose file",
+        noFile: "No file chosen",
         btnLoad: "Load Tags",
         statusIdle: "Load an MP3 to edit tags.",
         titleField: "Title",
@@ -174,6 +178,8 @@
         presetHelp: "Нажмите пресет или введите своё значение ниже.",
         audioFile: "Аудиофайл",
         audioHelp: "Загрузите MP3 или WAV для нормализации.",
+        chooseFile: "Выбрать файл",
+        noFile: "Файл не выбран",
         targetLufs: "Целевая LUFS",
         targetHelp: "Чем ниже — тише, чем выше — громче.",
         outputFormat: "Формат вывода",
@@ -228,6 +234,8 @@
         subtitle: "Загрузите MP3, чтобы посмотреть и обновить метаданные.",
         mp3File: "Файл MP3",
         mp3Help: "Выберите MP3, чтобы редактировать теги.",
+        chooseFile: "Выбрать файл",
+        noFile: "Файл не выбран",
         btnLoad: "Загрузить теги",
         statusIdle: "Загрузите MP3 для редактирования тегов.",
         titleField: "Название",
@@ -352,6 +360,9 @@
       btn.classList.toggle("is-active", isActive);
       btn.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
+
+    // allow other scripts to react (e.g., file name placeholders)
+    window.dispatchEvent(new CustomEvent("lufs:lang-changed", { detail: { lang } }));
   }
 
   function setLang(lang) {

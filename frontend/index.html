@@ -105,9 +105,19 @@
                 <div class="form-grid">
                   <label class="field">
                     <span class="label" data-i18n="normalize.audioFile">Audio file</span>
-                    <input type="file" id="file" accept=".mp3,.wav" required />
+
+                    <input type="file" id="file" accept=".mp3,.wav" required class="file-input" />
+
+                    <div class="file-picker">
+                      <button type="button" id="file-btn" class="file-button" data-i18n="normalize.chooseFile">
+                        Choose file
+                      </button>
+                      <span id="file-name" class="file-name" data-i18n="normalize.noFile">No file chosen</span>
+                    </div>
+
                     <span class="help" data-i18n="normalize.audioHelp">Upload an MP3 or WAV file to normalize.</span>
                   </label>
+
 
                   <label class="field">
                     <span class="label" data-i18n="normalize.targetLufs">Target LUFS</span>
@@ -211,9 +221,19 @@
             <form id="tags-form" class="inline-form">
               <label class="field">
                 <span class="label" data-i18n="tags.mp3File">MP3 file</span>
-                <input type="file" id="tags-file" accept=".mp3" required />
+
+                <input type="file" id="tags-file" accept=".mp3" required class="file-input" />
+
+                <div class="file-picker">
+                  <button type="button" id="tags-file-btn" class="file-button" data-i18n="tags.chooseFile">
+                    Choose file
+                  </button>
+                  <span id="tags-file-name" class="file-name" data-i18n="tags.noFile">No file chosen</span>
+                </div>
+
                 <span class="help" data-i18n="tags.mp3Help">Select an MP3 file to edit tags.</span>
               </label>
+
               <button type="submit" class="secondary" data-i18n="tags.btnLoad">Load Tags</button>
             </form>
 
